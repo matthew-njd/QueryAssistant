@@ -19,6 +19,7 @@ export function useChat() {
       });
       setResponse(data);
       if (!data.success) setError(data.error);
+      console.log(data.sql);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {

@@ -26,7 +26,7 @@ TABLES:
    - cus_type_cd    : Customer type code (char 5) — used for grouping by customer type
    - cus_alt_adr_cd : Default alternate address code (char 15)
    - terr           : Sales territory (char 2)
-   - slspsn_no      : Salesperson number (char 3)
+   - slspsn_no      : Salesperson number (char 3) — join key to sales rep table
    - ar_terms_cd    : Payment terms (char 3)
    - balance        : Current AR balance (decimal)
    - sls_ytd        : Year to date sales (decimal)
@@ -42,6 +42,7 @@ TABLES:
    - state          : State (char 4)
    - zip            : Zip code (char 10)
    - country        : Country (char 20)
+   - slspsn_no      : Salesperson number (char 3) — join key to sales rep table
 
 3. OEHDRHST_SQL (Order Header) — alias: h
    Key columns:
@@ -61,7 +62,7 @@ TABLES:
    - tot_cost       : Total cost (decimal)
    - tot_tax_amt    : Total tax amount (decimal)
    - frt_amt        : Freight amount (decimal)
-   - slspsn_no      : Salesperson number (char 3)
+   - slspsn_no      : Salesperson number (char 3) — join key to sales rep table
    - oe_po_no       : Customer PO number (char 25)
    - bill_to_name   : Bill to name (char 40)
    - closed_fg      : Closed flag (char 1)
@@ -88,6 +89,21 @@ TABLES:
    - prod_cat       : Product category (char 3)
    - uom            : Unit of measure (char 2)
 
+5. ARSLMFIL_SQL (Sales Representatives) — alias: sr
+   Key columns:
+   - slspsn_no      : Salesperson number (char 3) — join key to OEHDRHST_SQL and ARALTADR_SQL
+   - slspsn_name    : Salesperson full name (char 40)
+   - email_addr     : Salesperson email address (char 40)
+   - terr           : Sales territory (char 30)
+   - init           : Salesperson initials (char 3)
+   - phone_no       : Phone number (char 20)
+   - sls_ptd        : Sales period to date (decimal)
+   - sls_ytd        : Sales year to date (decimal)
+   - sls_last_yr    : Sales last year (decimal)
+   - comm_ptd       : Commission period to date (decimal)
+   - comm_ytd       : Commission year to date (decimal)
+   - cus_type_cd    : Primary customer type code (char 5)
+
 STANDARD JOIN PATTERN:
 Always use this join structure as the base for every query:
 
@@ -96,12 +112,16 @@ FROM OEHDRHST_SQL h
 JOIN OELINHST_SQL l ON h.ord_no = l.ord_no AND h.inv_no = l.inv_no
 JOIN ARCUSFIL_SQL c ON h.cus_no = c.cus_no
 LEFT JOIN ARALTADR_SQL a ON c.cus_no = a.cus_no AND h.cus_alt_adr_cd = a.cus_alt_adr_cd
+LEFT JOIN ARSLMFIL_SQL sr ON h.slspsn_no = sr.slspsn_no
 
 COMMON FILTER EXAMPLES:
-- Open orders only       : WHERE h.orig_ord_type = 'O'
-- Credits only           : WHERE h.orig_ord_type = 'C'
-- Specific item          : WHERE l.item_no LIKE '%GEN2BK0%'
-- Specific customer type : WHERE RTRIM(c.cus_type_cd) = 'RETAIL'
-- Orders this year       : WHERE h.ord_dt >= 20240101
-- Shipped orders         : WHERE h.shipped_dt IS NOT NULL AND h.shipped_dt > 0
-- Unshipped orders       : WHERE (h.shipped_dt IS NULL OR h.shipped_dt = 0)
+- Open orders only          : WHERE h.orig_ord_type = 'O'
+- Credits only              : WHERE h.orig_ord_type = 'C'
+- Specific item             : WHERE l.item_no LIKE '%GEN2BK0%'
+- Specific customer type    : WHERE RTRIM(c.cus_type_cd) = 'RETAIL'
+- Orders this year          : WHERE h.ord_dt >= 20240101
+- Shipped orders            : WHERE h.shipped_dt IS NOT NULL AND h.shipped_dt > 0
+- Unshipped orders          : WHERE (h.shipped_dt IS NULL OR h.shipped_dt = 0)
+- Specific sales rep        : WHERE RTRIM(sr.slspsn_name) = 'John Smith'
+- Sales rep by initials     : WHERE RTRIM(sr.init) = 'JS'
+- Sales for a territory     : WHERE RTRIM(sr.terr) = 'NORTHEAST'
