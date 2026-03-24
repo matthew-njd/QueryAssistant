@@ -2,6 +2,7 @@ import { useState } from "react";
 import { QuestionInput } from "./components/QuestionInput";
 import { ResultsTable } from "./components/ResultsTable";
 import { useChat } from "./hooks/useChat";
+import "./App.css";
 
 function App() {
   const { response, loading, exporting, error, ask, exportToExcel } = useChat();
