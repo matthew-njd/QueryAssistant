@@ -58,6 +58,7 @@ TABLES:
    - zip            : Zip code (char 10) — always RTRIM
    - country        : Country (char 20) — always RTRIM
    - slspsn_no      : Salesperson number (char 3) — join key, do not RTRIM in joins
+   - user_def_fld_2 : Stores territory (char 30) — always RTRIM
 
 3. OEHDRHST_SQL (Order Header) — alias: h
    Key columns:
@@ -108,7 +109,6 @@ TABLES:
    - slspsn_no      : Salesperson number (char 3) — join key, do not RTRIM in joins
    - slspsn_name    : Salesperson full name (char 40) — always RTRIM
    - email_addr     : Salesperson email address (char 40) — always RTRIM
-   - terr           : Sales territory (char 30) — always RTRIM
    - init           : Salesperson initials (char 3) — always RTRIM
    - phone_no       : Phone number (char 20) — always RTRIM
    - sls_ptd        : Sales period to date (decimal)
@@ -129,14 +129,14 @@ LEFT JOIN ARALTADR_SQL a ON c.cus_no = a.cus_no AND h.cus_alt_adr_cd = a.cus_alt
 LEFT JOIN ARSLMFIL_SQL sr ON h.slspsn_no = sr.slspsn_no
 
 COMMON FILTER EXAMPLES:
-- Open orders only          : WHERE RTRIM(h.orig_ord_type) = 'O'
-- Credits only              : WHERE RTRIM(h.orig_ord_type) = 'C'
-- Specific item             : WHERE l.item_no LIKE '%GEN2BK0%'
-- Specific customer type    : WHERE RTRIM(c.cus_type_cd) = 'RETAIL'
-- Orders this year          : WHERE h.ord_dt >= 20240101
-- Shipped orders            : WHERE h.shipped_dt IS NOT NULL AND h.shipped_dt > 0
-- Unshipped orders          : WHERE (h.shipped_dt IS NULL OR h.shipped_dt = 0)
-- Specific sales rep        : WHERE RTRIM(sr.slspsn_name) = 'John Smith'
-- Sales rep by initials     : WHERE RTRIM(sr.init) = 'JS'
-- Sales for a territory     : WHERE RTRIM(sr.terr) = 'NORTHEAST'
-- Total sales for a customer: SUM(l.unit_price * l.qty_to_ship) AS total_sales
+- Orders only                 : WHERE RTRIM(h.orig_ord_type) = 'O'
+- Credits only                : WHERE RTRIM(h.orig_ord_type) = 'C'
+- Specific item               : WHERE l.item_no LIKE '%GEN2BK0%'
+- Specific customer type      : WHERE RTRIM(c.cus_type_cd) = 'RETAIL'
+- Orders this year            : WHERE h.ord_dt >= 20260101
+- Shipped orders              : WHERE h.inv_dt IS NOT NULL AND h.inv_dt > 0
+- Unshipped orders            : WHERE (h.inv_dt IS NULL OR h.inv_dt = 0)
+- Specific sales rep          : WHERE RTRIM(sr.slspsn_name) = 'John Smith'
+- Sales rep by initials       : WHERE RTRIM(sr.init) = 'JS'
+- Store/Customer territory    : WHERE RTRIM(a.user_def_fld_2) = 'U123'
+- Total sales for a customer  : SUM(l.unit_price * l.qty_to_ship) AS total_sales
