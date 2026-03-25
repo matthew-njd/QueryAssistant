@@ -12,11 +12,8 @@ function App() {
         {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-bold text-primary">
-            Sales Query Assistant
+            PCF Sales Query Assistant
           </h1>
-          <p className="text-base-content/60">
-            Ask questions about your sales data in plain English
-          </p>
         </div>
 
         {/* Input */}

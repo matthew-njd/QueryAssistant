@@ -19,13 +19,13 @@ export function QuestionInput({ onSubmit, loading }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <label className="text-sm font-semibold text-base-content/70 uppercase tracking-wide">
-        Ask a question about your sales data
+        Ask a question about your sales data in plain English
       </label>
       <div className="flex gap-2">
         <input
           type="text"
           className="input input-bordered flex-1"
-          placeholder="e.g. Show me all orders that include item GEN2BK0"
+          placeholder="e.g. Show me all orders that include item GEN2BK0 for our CVS customer, between Jan 2026 and March 2026."
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           onKeyDown={handleKeyDown}

@@ -17,92 +17,106 @@ ITEM FILTERING RULE:
 - Always use LIKE with wildcard on both sides when filtering by item_no. Never use exact match (=) for item_no.
 - Example: WHERE l.item_no LIKE '%GEN2BK0%'
 
+SALES CALCULATION RULE:
+- Never use l.sls_amt to calculate sales totals. It is not reliable.
+- Always calculate sales as SUM(l.unit_price * l.qty_to_ship) AS total_sales.
+- This applies to any query that involves totalling, summing, or aggregating sales amounts.
+- Example: SELECT c.cus_name, SUM(l.unit_price * l.qty_to_ship) AS total_sales FROM ...
+
+RTRIM RULE:
+- Always wrap every varchar and char column in RTRIM() when selecting or filtering.
+- This applies to ALL char/varchar columns across all tables without exception.
+- Examples:
+  - Selecting  : RTRIM(c.cus_name) AS cus_name, RTRIM(c.cus_type_cd) AS cus_type_cd
+  - Filtering  : WHERE RTRIM(c.cus_type_cd) = 'RETAIL'
+  - Joining    : Do NOT use RTRIM on join key columns (e.g. cus_no, ord_no, inv_no) as this can hurt performance
+  - Aggregating: Do NOT wrap RTRIM around columns used in GROUP BY numeric aggregations
+
 TABLES:
 
 1. ARCUSFIL_SQL (Customer Master) — alias: c
    Key columns:
-   - cus_no         : Customer number (char 12) — join key
-   - cus_name       : Customer name (char 40)
-   - cus_type_cd    : Customer type code (char 5) — used for grouping by customer type
-   - cus_alt_adr_cd : Default alternate address code (char 15)
-   - terr           : Sales territory (char 2)
-   - slspsn_no      : Salesperson number (char 3) — join key to sales rep table
-   - ar_terms_cd    : Payment terms (char 3)
+   - cus_no         : Customer number (char 12) — join key, do not RTRIM in joins
+   - cus_name       : Customer name (char 40) — always RTRIM
+   - cus_type_cd    : Customer type code (char 5) — always RTRIM
+   - cus_alt_adr_cd : Default alternate address code (char 15) — join key, do not RTRIM in joins
+   - terr           : Sales territory (char 2) — always RTRIM
+   - slspsn_no      : Salesperson number (char 3) — join key, do not RTRIM in joins
+   - ar_terms_cd    : Payment terms (char 3) — always RTRIM
    - balance        : Current AR balance (decimal)
    - sls_ytd        : Year to date sales (decimal)
    - sls_last_yr    : Last year sales (decimal)
 
 2. ARALTADR_SQL (Customer Alternate Addresses) — alias: a
    Key columns:
-   - cus_no         : Customer number (char 12) — join key
-   - cus_alt_adr_cd : Alternate address code (char 15) — join key
-   - cus_name       : Alternate address name (char 40)
-   - addr_1         : Address line 1 (char 40)
-   - city           : City (char 26)
-   - state          : State (char 4)
-   - zip            : Zip code (char 10)
-   - country        : Country (char 20)
-   - slspsn_no      : Salesperson number (char 3) — join key to sales rep table
+   - cus_no         : Customer number (char 12) — join key, do not RTRIM in joins
+   - cus_alt_adr_cd : Alternate address code (char 15) — join key, do not RTRIM in joins
+   - cus_name       : Alternate address name (char 40) — always RTRIM
+   - addr_1         : Address line 1 (char 40) — always RTRIM
+   - city           : City (char 26) — always RTRIM
+   - state          : State (char 4) — always RTRIM
+   - zip            : Zip code (char 10) — always RTRIM
+   - country        : Country (char 20) — always RTRIM
+   - slspsn_no      : Salesperson number (char 3) — join key, do not RTRIM in joins
 
 3. OEHDRHST_SQL (Order Header) — alias: h
    Key columns:
-   - ord_no         : Order number (char 8) — join key with order lines
-   - inv_no         : Invoice number (int) — join key with order lines
-   - ord_type       : Order type (char 1)
-   - orig_ord_type  : Original order type (char 1) — 'O' = Order, 'C' = Credit
-   - cus_no         : Customer number (char 12) — join key with customer
-   - cus_alt_adr_cd : Alternate address code (char 15)
-   - status         : Order status (char 1)
+   - ord_no         : Order number (char 8) — join key, do not RTRIM in joins
+   - inv_no         : Invoice number (int) — join key, do not RTRIM in joins
+   - ord_type       : Order type (char 1) — always RTRIM
+   - orig_ord_type  : Original order type (char 1) — always RTRIM — 'O' = Order, 'C' = Credit
+   - cus_no         : Customer number (char 12) — join key, do not RTRIM in joins
+   - cus_alt_adr_cd : Alternate address code (char 15) — join key, do not RTRIM in joins
+   - status         : Order status (char 1) — always RTRIM
    - ord_dt         : Order date (int YYYYMMDD)
    - shipped_dt     : Shipped date (int YYYYMMDD)
-   - ship_to_name   : Ship to name (char 40)
-   - ship_to_addr_1 : Ship to address (char 40)
-   - ship_to_country: Ship to country (char 20)
+   - ship_to_name   : Ship to name (char 40) — always RTRIM
+   - ship_to_addr_1 : Ship to address (char 40) — always RTRIM
+   - ship_to_country: Ship to country (char 20) — always RTRIM
    - tot_sls_amt    : Total sales amount (decimal)
    - tot_cost       : Total cost (decimal)
    - tot_tax_amt    : Total tax amount (decimal)
    - frt_amt        : Freight amount (decimal)
-   - slspsn_no      : Salesperson number (char 3) — join key to sales rep table
-   - oe_po_no       : Customer PO number (char 25)
-   - bill_to_name   : Bill to name (char 40)
-   - closed_fg      : Closed flag (char 1)
-   - hold_fg        : Hold flag (char 1)
+   - slspsn_no      : Salesperson number (char 3) — join key, do not RTRIM in joins
+   - oe_po_no       : Customer PO number (char 25) — always RTRIM
+   - bill_to_name   : Bill to name (char 40) — always RTRIM
+   - closed_fg      : Closed flag (char 1) — always RTRIM
+   - hold_fg        : Hold flag (char 1) — always RTRIM
    - inv_dt         : Invoice date (int YYYYMMDD)
 
 4. OELINHST_SQL (Order Lines) — alias: l
    Key columns:
-   - ord_no         : Order number (char 8) — join key with header
-   - inv_no         : Invoice number (int) — join key with header
+   - ord_no         : Order number (char 8) — join key, do not RTRIM in joins
+   - inv_no         : Invoice number (int) — join key, do not RTRIM in joins
    - line_seq_no    : Line sequence number (smallint)
-   - item_no        : Item/product code (char 15) — use LIKE for filtering
-   - item_desc_1    : Item description line 1 (char 30)
-   - item_desc_2    : Item description line 2 (char 30)
-   - cus_no         : Customer number (char 12)
+   - item_no        : Item/product code (char 15) — always RTRIM, use LIKE for filtering
+   - item_desc_1    : Item description line 1 (char 30) — always RTRIM
+   - item_desc_2    : Item description line 2 (char 30) — always RTRIM
+   - cus_no         : Customer number (char 12) — join key, do not RTRIM in joins
    - qty_ordered    : Quantity ordered (decimal)
    - qty_to_ship    : Quantity to ship (decimal)
-   - qty_bkord      : Quantity on backorder (decimal)
    - unit_price     : Unit price (decimal)
    - discount_pct   : Discount percentage (decimal)
-   - sls_amt        : Line sales amount (decimal)
+   - sls_amt        : Line sales amount (decimal) — DO NOT use for sales totals, use unit_price * qty_to_ship instead
    - cost_amt       : Line cost amount (decimal)
    - shipped_dt     : Line shipped date (int YYYYMMDD)
-   - prod_cat       : Product category (char 3)
-   - uom            : Unit of measure (char 2)
+   - prod_cat       : Product category (char 3) — always RTRIM
+   - uom            : Unit of measure (char 2) — always RTRIM
 
 5. ARSLMFIL_SQL (Sales Representatives) — alias: sr
    Key columns:
-   - slspsn_no      : Salesperson number (char 3) — join key to OEHDRHST_SQL and ARALTADR_SQL
-   - slspsn_name    : Salesperson full name (char 40)
-   - email_addr     : Salesperson email address (char 40)
-   - terr           : Sales territory (char 30)
-   - init           : Salesperson initials (char 3)
-   - phone_no       : Phone number (char 20)
+   - slspsn_no      : Salesperson number (char 3) — join key, do not RTRIM in joins
+   - slspsn_name    : Salesperson full name (char 40) — always RTRIM
+   - email_addr     : Salesperson email address (char 40) — always RTRIM
+   - terr           : Sales territory (char 30) — always RTRIM
+   - init           : Salesperson initials (char 3) — always RTRIM
+   - phone_no       : Phone number (char 20) — always RTRIM
    - sls_ptd        : Sales period to date (decimal)
    - sls_ytd        : Sales year to date (decimal)
    - sls_last_yr    : Sales last year (decimal)
    - comm_ptd       : Commission period to date (decimal)
    - comm_ytd       : Commission year to date (decimal)
-   - cus_type_cd    : Primary customer type code (char 5)
+   - cus_type_cd    : Primary customer type code (char 5) — always RTRIM
 
 STANDARD JOIN PATTERN:
 Always use this join structure as the base for every query:
@@ -115,8 +129,8 @@ LEFT JOIN ARALTADR_SQL a ON c.cus_no = a.cus_no AND h.cus_alt_adr_cd = a.cus_alt
 LEFT JOIN ARSLMFIL_SQL sr ON h.slspsn_no = sr.slspsn_no
 
 COMMON FILTER EXAMPLES:
-- Open orders only          : WHERE h.orig_ord_type = 'O'
-- Credits only              : WHERE h.orig_ord_type = 'C'
+- Open orders only          : WHERE RTRIM(h.orig_ord_type) = 'O'
+- Credits only              : WHERE RTRIM(h.orig_ord_type) = 'C'
 - Specific item             : WHERE l.item_no LIKE '%GEN2BK0%'
 - Specific customer type    : WHERE RTRIM(c.cus_type_cd) = 'RETAIL'
 - Orders this year          : WHERE h.ord_dt >= 20240101
@@ -125,3 +139,4 @@ COMMON FILTER EXAMPLES:
 - Specific sales rep        : WHERE RTRIM(sr.slspsn_name) = 'John Smith'
 - Sales rep by initials     : WHERE RTRIM(sr.init) = 'JS'
 - Sales for a territory     : WHERE RTRIM(sr.terr) = 'NORTHEAST'
+- Total sales for a customer: SUM(l.unit_price * l.qty_to_ship) AS total_sales

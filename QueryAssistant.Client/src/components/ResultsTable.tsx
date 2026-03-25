@@ -2,6 +2,35 @@ import { useState } from "react";
 
 const PAGE_SIZE = 25;
 
+const CURRENCY_KEYWORDS = [
+  "sales",
+  "amt",
+  "amount",
+  "price",
+  "cost",
+  "total",
+  "balance",
+  "comm",
+  "commission",
+  "frt",
+];
+
+const isCurrencyColumn = (col: string): boolean => {
+  const lower = col.toLowerCase();
+  return CURRENCY_KEYWORDS.some((k) => lower.includes(k));
+};
+
+const formatValue = (col: string, value: unknown): string => {
+  if (value == null) return "—";
+  if (isCurrencyColumn(col) && !isNaN(Number(value))) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(Number(value));
+  }
+  return String(value);
+};
+
 interface Props {
   data: Record<string, unknown>[];
   sql: string | null;
@@ -75,7 +104,20 @@ export function ResultsTable({
           {exporting ? (
             <span className="loading loading-spinner loading-sm" />
           ) : (
-            "⬇ Export to Excel"
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="currentColor"
+                  d="m12 16l-5-5l1.4-1.45l2.6 2.6V4h2v8.15l2.6-2.6L17 11zm-6 4q-.825 0-1.412-.587T4 18v-3h2v3h12v-3h2v3q0 .825-.587 1.413T18 20z"
+                />
+              </svg>
+              Export to Excel
+            </>
           )}
         </button>
       </div>
@@ -103,7 +145,7 @@ export function ResultsTable({
               {columns.map((col) => (
                 <th
                   key={col}
-                  className="bg-primary text-primary-content whitespace-nowrap"
+                  className={`bg-primary text-primary-content whitespace-nowrap ${isCurrencyColumn(col) ? "text-right" : ""}`}
                 >
                   {col}
                 </th>
@@ -114,8 +156,11 @@ export function ResultsTable({
             {pageData.map((row, i) => (
               <tr key={i}>
                 {columns.map((col) => (
-                  <td key={col} className="whitespace-nowrap">
-                    {row[col] == null ? "—" : String(row[col])}
+                  <td
+                    key={col}
+                    className={`whitespace-nowrap ${isCurrencyColumn(col) ? "text-right" : ""}`}
+                  >
+                    {formatValue(col, row[col])}
                   </td>
                 ))}
               </tr>
