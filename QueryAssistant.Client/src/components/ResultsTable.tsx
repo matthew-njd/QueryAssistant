@@ -1,18 +1,24 @@
+import { useState } from "react";
+
+const PAGE_SIZE = 25;
+
 interface Props {
   data: Record<string, unknown>[];
-  rowCount: number;
   sql: string | null;
+  totalRows: number;
   onExport: () => void;
   exporting: boolean;
 }
 
 export function ResultsTable({
   data,
-  rowCount,
   sql,
+  totalRows,
   onExport,
   exporting,
 }: Props) {
+  const [page, setPage] = useState(1);
+
   if (!data.length)
     return (
       <div className="alert alert-warning">
@@ -21,13 +27,45 @@ export function ResultsTable({
     );
 
   const columns = Object.keys(data[0]);
+  const totalPages = Math.ceil(totalRows / PAGE_SIZE);
+  const startIndex = (page - 1) * PAGE_SIZE;
+  const endIndex = Math.min(page * PAGE_SIZE, totalRows);
+  const pageData = data.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages: (number | "ellipsis")[] = [];
+
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (page > 3) pages.push("ellipsis");
+      for (
+        let i = Math.max(2, page - 1);
+        i <= Math.min(totalPages - 1, page + 1);
+        i++
+      ) {
+        pages.push(i);
+      }
+      if (page < totalPages - 2) pages.push("ellipsis");
+      pages.push(totalPages);
+    }
+
+    return pages;
+  };
 
   return (
     <div className="flex flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <div className="badge badge-neutral badge-lg">
-          {rowCount} row{rowCount !== 1 ? "s" : ""} returned
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <div className="badge badge-neutral badge-lg">
+            {totalRows.toLocaleString()} total row{totalRows !== 1 ? "s" : ""}
+          </div>
+          <span className="text-sm text-base-content/60">
+            Showing {(startIndex + 1).toLocaleString()}–
+            {endIndex.toLocaleString()}
+          </span>
         </div>
         <button
           className="btn btn-success btn-sm"
@@ -73,7 +111,7 @@ export function ResultsTable({
             </tr>
           </thead>
           <tbody>
-            {data.map((row, i) => (
+            {pageData.map((row, i) => (
               <tr key={i}>
                 {columns.map((col) => (
                   <td key={col} className="whitespace-nowrap">
@@ -85,6 +123,51 @@ export function ResultsTable({
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center">
+          <div className="join">
+            {/* Previous */}
+            <button
+              className="join-item btn btn-sm"
+              onClick={() => setPage((p) => p - 1)}
+              disabled={page === 1}
+            >
+              «
+            </button>
+
+            {/* Page Numbers */}
+            {getPageNumbers().map((p, i) =>
+              p === "ellipsis" ? (
+                <button
+                  key={`ellipsis-${i}`}
+                  className="join-item btn btn-sm btn-disabled"
+                >
+                  ...
+                </button>
+              ) : (
+                <button
+                  key={p}
+                  className={`join-item btn btn-sm ${page === p ? "btn-primary" : ""}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </button>
+              ),
+            )}
+
+            {/* Next */}
+            <button
+              className="join-item btn btn-sm"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page === totalPages}
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,11 +7,13 @@ export function useChat() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState("");
 
   const ask = async (question: string) => {
     setLoading(true);
     setError(null);
     setResponse(null);
+    setCurrentQuestion(question);
 
     try {
       const { data } = await axios.post<ChatResponse>("/api/chat", {
@@ -19,7 +21,6 @@ export function useChat() {
       });
       setResponse(data);
       if (!data.success) setError(data.error);
-      console.log(data.sql);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -27,15 +28,13 @@ export function useChat() {
     }
   };
 
-  const exportToExcel = async (question: string) => {
+  const exportToExcel = async () => {
     setExporting(true);
     try {
       const { data, headers } = await axios.post(
         "/api/export",
-        { question },
-        {
-          responseType: "blob",
-        },
+        { question: currentQuestion },
+        { responseType: "blob" },
       );
 
       const contentDisposition = headers["content-disposition"];

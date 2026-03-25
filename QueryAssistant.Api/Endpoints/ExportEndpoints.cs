@@ -28,11 +28,7 @@ namespace QueryAssistant.Api.Endpoints
                 if (!sqlSafetyService.IsSafe(sql))
                     return Results.BadRequest("The generated query failed the safety check.");
 
-                var countResult = await queryService.ExecuteAsync(sql.Trim(), 1, 1);
-                if (!countResult.Success)
-                    return Results.BadRequest(countResult.Error ?? "Query execution failed.");
-
-                var result = await queryService.ExecuteAsync(sql.Trim(), 1, countResult.TotalRows > 0 ? countResult.TotalRows : 1);
+                var result = await queryService.ExecuteAsync(sql.Trim());
 
                 if (!result.Success || result.Data == null || result.Data.Count == 0)
                     return Results.BadRequest(result.Error ?? "Query execution failed.");

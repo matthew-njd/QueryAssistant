@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { QuestionInput } from "./components/QuestionInput";
 import { ResultsTable } from "./components/ResultsTable";
 import { useChat } from "./hooks/useChat";
@@ -6,12 +5,6 @@ import "./App.css";
 
 function App() {
   const { response, loading, exporting, error, ask, exportToExcel } = useChat();
-  const [question, setQuestion] = useState("");
-
-  const handleAsk = (q: string) => {
-    setQuestion(q);
-    ask(q);
-  };
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -28,7 +21,7 @@ function App() {
 
         {/* Input */}
         <div className="card bg-base-100 shadow p-6">
-          <QuestionInput onSubmit={handleAsk} loading={loading} />
+          <QuestionInput onSubmit={ask} loading={loading} />
         </div>
 
         {/* Error */}
@@ -43,9 +36,9 @@ function App() {
           <div className="card bg-base-100 shadow p-6">
             <ResultsTable
               data={response.data}
-              rowCount={response.rowCount ?? 0}
               sql={response.sql}
-              onExport={() => exportToExcel(question)}
+              totalRows={response.totalRows ?? 0}
+              onExport={exportToExcel}
               exporting={exporting}
             />
           </div>
