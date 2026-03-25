@@ -28,9 +28,13 @@ namespace QueryAssistant.Api.Endpoints
                 if (!sqlSafetyService.IsSafe(sql))
                     return Results.BadRequest("The generated query failed the safety check.");
 
-                var result = await queryService.ExecuteAsync(sql.Trim());
+                var countResult = await queryService.ExecuteAsync(sql.Trim(), 1, 1);
+                if (!countResult.Success)
+                    return Results.BadRequest(countResult.Error ?? "Query execution failed.");
 
-                if (!result.Success || result.Data == null)
+                var result = await queryService.ExecuteAsync(sql.Trim(), 1, countResult.TotalRows > 0 ? countResult.TotalRows : 1);
+
+                if (!result.Success || result.Data == null || result.Data.Count == 0)
                     return Results.BadRequest(result.Error ?? "Query execution failed.");
 
                 using var workbook = new XLWorkbook();
