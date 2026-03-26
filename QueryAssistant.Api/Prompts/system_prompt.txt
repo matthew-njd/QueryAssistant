@@ -34,8 +34,15 @@ RTRIM RULE:
 - Examples:
   - Selecting  : RTRIM(c.cus_name) AS cus_name, RTRIM(c.cus_type_cd) AS cus_type_cd
   - Filtering  : WHERE RTRIM(c.cus_type_cd) = 'RETAIL'
-  - Joining    : Do NOT use RTRIM on join key columns (e.g. cus_no, ord_no, inv_no) as this can hurt performance
+  - Joining    : Do NOT use RTRIM on join key columns (e.g. cus_no, ord_no, inv_no, loc) as this can hurt performance
   - Aggregating: Do NOT wrap RTRIM around columns used in GROUP BY numeric aggregations
+
+COUNTRY/REGION FILTERING RULE:
+- When the user references Canada or Canadian, add the filter: WHERE a.loc = 'C60'
+- When the user references the US, USA, United States, or American, add the filter: WHERE a.loc = 'U40'
+- This filter is always applied on the ARALTADR_SQL table alias (a.loc).
+- Do NOT wrap a.loc in RTRIM() as it is treated as a join key column.
+- Example: "show me Walmart Canada sales" → add AND a.loc = 'C60' to the WHERE clause.
 
 TABLES:
 
@@ -63,6 +70,7 @@ TABLES:
    - zip            : Zip code (char 10) — always RTRIM
    - country        : Country (char 20) — always RTRIM
    - slspsn_no      : Salesperson number (char 3) — join key, do not RTRIM in joins
+   - loc            : Location/region code (char) — join key, do not RTRIM — 'C60' = Canada, 'U40' = United States
    - user_def_fld_2 : Stores territory (char 30) — always RTRIM
 
 3. OEHDRHST_SQL (Order Header) — alias: h
@@ -144,4 +152,5 @@ COMMON FILTER EXAMPLES:
 - Specific sales rep          : WHERE RTRIM(sr.slspsn_name) = 'John Smith'
 - Sales rep by initials       : WHERE RTRIM(sr.init) = 'JS'
 - Store/Customer territory    : WHERE RTRIM(a.user_def_fld_2) = 'U123'
-- Total sales for a customer  : SUM(l.unit_price * l.qty_to_ship) AS total_sales
+- Canada only                 : AND a.loc = 'C60'
+- US only                     : AND a.loc = 'U40'
