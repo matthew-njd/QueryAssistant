@@ -99,7 +99,7 @@ export function ResultsTable({ data, sql, totalRows, question }: Props) {
           className="btn btn-success btn-sm"
           onClick={() => exportDataToExcel(data, question)}
         >
-          ⬇ Export to Excel
+          Export to Excel
         </button>
       </div>
 
