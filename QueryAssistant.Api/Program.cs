@@ -34,6 +34,5 @@ app.UseHttpsRedirection();
 
 app.MapHealthEndpoints();
 app.MapChatEndpoints();
-app.MapExportEndpoints();
 
 app.Run();
