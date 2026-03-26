@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { exportDataToExcel } from "../utils/exportToExcel";
 
 const PAGE_SIZE = 25;
 
@@ -35,17 +36,17 @@ interface Props {
   data: Record<string, unknown>[];
   sql: string | null;
   totalRows: number;
-  onExport: () => void;
-  exporting: boolean;
+  question: string;
 }
 
-export function ResultsTable({
-  data,
-  sql,
-  totalRows,
-  onExport,
-  exporting,
-}: Props) {
+interface Props {
+  data: Record<string, unknown>[];
+  sql: string | null;
+  totalRows: number;
+  question: string;
+}
+
+export function ResultsTable({ data, sql, totalRows, question }: Props) {
   const [page, setPage] = useState(1);
 
   if (!data.length)
@@ -63,7 +64,6 @@ export function ResultsTable({
 
   const getPageNumbers = () => {
     const pages: (number | "ellipsis")[] = [];
-
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
@@ -79,7 +79,6 @@ export function ResultsTable({
       if (page < totalPages - 2) pages.push("ellipsis");
       pages.push(totalPages);
     }
-
     return pages;
   };
 
@@ -98,27 +97,9 @@ export function ResultsTable({
         </div>
         <button
           className="btn btn-success btn-sm"
-          onClick={onExport}
-          disabled={exporting}
+          onClick={() => exportDataToExcel(data, question)}
         >
-          {exporting ? (
-            <span className="loading loading-spinner loading-sm" />
-          ) : (
-            <>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  fill="currentColor"
-                  d="m12 16l-5-5l1.4-1.45l2.6 2.6V4h2v8.15l2.6-2.6L17 11zm-6 4q-.825 0-1.412-.587T4 18v-3h2v3h12v-3h2v3q0 .825-.587 1.413T18 20z"
-                />
-              </svg>
-              Export to Excel
-            </>
-          )}
+          ⬇ Export to Excel
         </button>
       </div>
 
@@ -173,7 +154,6 @@ export function ResultsTable({
       {totalPages > 1 && (
         <div className="flex justify-center">
           <div className="join">
-            {/* Previous */}
             <button
               className="join-item btn btn-sm"
               onClick={() => setPage((p) => p - 1)}
@@ -181,8 +161,6 @@ export function ResultsTable({
             >
               «
             </button>
-
-            {/* Page Numbers */}
             {getPageNumbers().map((p, i) =>
               p === "ellipsis" ? (
                 <button
@@ -201,8 +179,6 @@ export function ResultsTable({
                 </button>
               ),
             )}
-
-            {/* Next */}
             <button
               className="join-item btn btn-sm"
               onClick={() => setPage((p) => p + 1)}

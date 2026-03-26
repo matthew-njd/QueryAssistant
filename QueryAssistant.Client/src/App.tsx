@@ -1,10 +1,17 @@
+import { useState } from "react";
 import { QuestionInput } from "./components/QuestionInput";
 import { ResultsTable } from "./components/ResultsTable";
 import { useChat } from "./hooks/useChat";
 import "./App.css";
 
 function App() {
-  const { response, loading, exporting, error, ask, exportToExcel } = useChat();
+  const { response, loading, error, ask } = useChat();
+  const [currentQuestion, setCurrentQuestion] = useState("");
+
+  const handleAsk = (q: string) => {
+    setCurrentQuestion(q);
+    ask(q);
+  };
 
   return (
     <div className="min-h-screen bg-base-200">
@@ -12,13 +19,16 @@ function App() {
         {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-bold text-primary">
-            PCF Sales Query Assistant
+            Sales Query Assistant
           </h1>
+          <p className="text-base-content/60">
+            Ask questions about your sales data in plain English
+          </p>
         </div>
 
         {/* Input */}
         <div className="card bg-base-100 shadow p-6">
-          <QuestionInput onSubmit={ask} loading={loading} />
+          <QuestionInput onSubmit={handleAsk} loading={loading} />
         </div>
 
         {/* Error */}
@@ -35,8 +45,7 @@ function App() {
               data={response.data}
               sql={response.sql}
               totalRows={response.totalRows ?? 0}
-              onExport={exportToExcel}
-              exporting={exporting}
+              question={currentQuestion}
             />
           </div>
         )}
