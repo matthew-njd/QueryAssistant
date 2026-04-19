@@ -86,7 +86,7 @@ A natural language sales data query tool built with ASP.NET Core (.NET 10) and R
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/QueryAssistant.git
+git clone https://github.com/matthew-njd/QueryAssistant.git
 cd QueryAssistant
 ```
 
