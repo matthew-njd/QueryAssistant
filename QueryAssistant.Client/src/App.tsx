@@ -37,68 +37,67 @@ function App() {
         {/* Header */}
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-bold text-primary">
-            PCF Sales Query Assistant
+            PCF AI Query Assistant for Sales
           </h1>
         </div>
 
         {/* Tabs */}
-        <div role="tablist" className="tabs tabs-bordered">
-          <button
-            role="tab"
-            className={`tab ${activeTab === "quick" ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("quick")}
-          >
-            Quick Query
-          </button>
-          <button
-            role="tab"
-            className={`tab ${activeTab === "brainstorm" ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("brainstorm")}
-          >
-            Brainstorm
-          </button>
-        </div>
-
-        {/* Quick Query Tab */}
-        {activeTab === "quick" && (
-          <>
-            <div className="card bg-base-100 shadow p-6">
-              <QuestionInput
-                value={question}
-                onChange={setQuestion}
-                onSubmit={handleAsk}
-                loading={loading}
-              />
-            </div>
-
-            {error && (
-              <div className="alert alert-error">
-                <span>{error}</span>
-              </div>
-            )}
-
-            {response?.success && response.data && (
-              <div className="card bg-base-100 shadow p-6">
-                <ResultsTable
-                  data={response.data}
-                  sql={response.sql}
-                  totalRows={response.totalRows ?? 0}
-                  question={currentQuestion}
+        <div className="tabs tabs-lift">
+          <input
+            type="radio"
+            name="app_tabs"
+            className="tab"
+            aria-label="Quick Query"
+            checked={activeTab === "quick"}
+            onChange={() => setActiveTab("quick")}
+          />
+          {activeTab === "quick" && (
+            <>
+              <div className="tab-content bg-base-100 border-base-300 p-6">
+                <QuestionInput
+                  value={question}
+                  onChange={setQuestion}
+                  onSubmit={handleAsk}
+                  loading={loading}
                 />
               </div>
-            )}
-          </>
-        )}
 
-        {/* Brainstorm Tab */}
-        {activeTab === "brainstorm" && (
-          <div className="card bg-base-100 shadow p-6">
-            <BrainstormChat
-              onUseQuery={handleUseQuery}
-              onReportGenerated={handleReportGenerated}
-            />
-          </div>
-        )}
+              {error && (
+                <div className="alert alert-error">
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {response?.success && response.data && (
+                <div className="tab-content bg-base-100 border-base-300 p-6">
+                  <ResultsTable
+                    data={response.data}
+                    sql={response.sql}
+                    totalRows={response.totalRows ?? 0}
+                    question={currentQuestion}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          <input
+            type="radio"
+            name="app_tabs"
+            className="tab"
+            aria-label="Brainstorm"
+            checked={activeTab === "brainstorm"}
+            onChange={() => setActiveTab("brainstorm")}
+          />
+          {activeTab === "brainstorm" && (
+            <div className="tab-content bg-base-100 border-base-300 p-6">
+              <BrainstormChat
+                onUseQuery={handleUseQuery}
+                onReportGenerated={handleReportGenerated}
+              />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

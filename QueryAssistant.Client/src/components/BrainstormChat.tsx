@@ -16,8 +16,15 @@ interface Props {
 }
 
 export function BrainstormChat({ onUseQuery, onReportGenerated }: Props) {
-  const { messages, isLoading, error, suggestedQuery, sendMessage, generateReport, clearChat } =
-    useBrainstorm();
+  const {
+    messages,
+    isLoading,
+    error,
+    suggestedQuery,
+    sendMessage,
+    generateReport,
+    clearChat,
+  } = useBrainstorm();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -37,11 +44,12 @@ export function BrainstormChat({ onUseQuery, onReportGenerated }: Props) {
 
   const handleGenerateReport = async () => {
     const result = await generateReport();
-    if (result) onReportGenerated(result, suggestedQuery ?? "Brainstorm report");
+    if (result)
+      onReportGenerated(result, suggestedQuery ?? "Brainstorm report");
   };
 
   return (
-    <div className="flex flex-col h-[520px]">
+    <div className="flex flex-col h-130">
       {/* Clear button */}
       {messages.length > 0 && (
         <div className="flex justify-end pb-2">
@@ -64,13 +72,18 @@ export function BrainstormChat({ onUseQuery, onReportGenerated }: Props) {
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} className={`chat ${msg.role === "user" ? "chat-end" : "chat-start"}`}>
+          <div
+            key={i}
+            className={`chat ${msg.role === "user" ? "chat-end" : "chat-start"}`}
+          >
             <div
               className={`chat-bubble text-sm whitespace-pre-wrap ${
                 msg.role === "user" ? "chat-bubble-primary" : ""
               }`}
             >
-              {msg.role === "assistant" ? stripSuggested(msg.content) : msg.content}
+              {msg.role === "assistant"
+                ? stripSuggested(msg.content)
+                : msg.content}
             </div>
           </div>
         ))}
@@ -127,7 +140,7 @@ export function BrainstormChat({ onUseQuery, onReportGenerated }: Props) {
         <div className="flex gap-2">
           <input
             type="text"
-            className="input input-bordered flex-1 input-sm"
+            className="input input-bordered flex-1"
             placeholder="Describe what you're looking for..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -135,12 +148,12 @@ export function BrainstormChat({ onUseQuery, onReportGenerated }: Props) {
             disabled={isLoading}
           />
           <button
-            className="btn btn-primary btn-sm"
+            className="btn btn-primary"
             onClick={handleSend}
             disabled={isLoading || !input.trim()}
           >
             {isLoading ? (
-              <span className="loading loading-spinner loading-xs" />
+              <span className="loading loading-spinner loading-sm" />
             ) : (
               "Send"
             )}
