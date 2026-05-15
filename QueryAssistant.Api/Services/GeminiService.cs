@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using QueryAssistant.Api.Interfaces;
+using QueryAssistant.Api.Models;
 
 namespace QueryAssistant.Api.Services
 {
@@ -8,6 +9,7 @@ namespace QueryAssistant.Api.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
+        private const string ModelUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent";
 
         public GeminiService(HttpClient httpClient, IConfiguration configuration)
         {
@@ -17,8 +19,6 @@ namespace QueryAssistant.Api.Services
 
         public async Task<string> GenerateSqlAsync(string userPrompt, string systemPrompt)
         {
-            var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent?key={_apiKey}";
-
             var payload = new
             {
                 system_instruction = new
@@ -35,6 +35,32 @@ namespace QueryAssistant.Api.Services
                 }
             };
 
+            return await CallGeminiAsync(payload);
+        }
+
+        public async Task<string> GenerateChatResponseAsync(List<ChatMessage> messages, string systemPrompt)
+        {
+            var contents = messages.Select(m => new
+            {
+                role = m.Role == "assistant" ? "model" : m.Role,
+                parts = new[] { new { text = m.Content } }
+            }).ToArray();
+
+            var payload = new
+            {
+                system_instruction = new
+                {
+                    parts = new[] { new { text = systemPrompt } }
+                },
+                contents
+            };
+
+            return await CallGeminiAsync(payload);
+        }
+
+        private async Task<string> CallGeminiAsync(object payload)
+        {
+            var url = $"{ModelUrl}?key={_apiKey}";
             var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
             var response = await _httpClient.PostAsync(url, content);

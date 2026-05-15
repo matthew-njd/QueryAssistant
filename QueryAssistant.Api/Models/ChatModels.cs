@@ -9,8 +9,10 @@ namespace QueryAssistant.Api.Models
         int? TotalRows,
         string? Error
     );
-    
-    public class ChatModels
-    {
-    }
+
+    public record ChatMessage(string Role, string Content);
+
+    public record BrainstormRequest(List<ChatMessage> Messages);
+
+    public record BrainstormResponse(string Reply);
 }
