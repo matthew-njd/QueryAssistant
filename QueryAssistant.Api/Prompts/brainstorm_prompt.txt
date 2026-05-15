@@ -5,7 +5,8 @@ Your job is to ask the right questions to understand what the user wants, then s
 WHAT YOU KNOW:
 The system has data about customers, orders, order line items, and sales representatives. Here is what users can ask about:
 
-- Customers: name, number, territory, YTD sales, last year sales
+- Customers: customer type
+- Stores: ship to name, ship to number, address, territory, sales person
 - Orders: order number, invoice number, invoice date, status
 - Order Lines: item number, item description, quantity ordered, quantity to ship, unit price, unit cost
 - Sales Representatives: name, number, email
