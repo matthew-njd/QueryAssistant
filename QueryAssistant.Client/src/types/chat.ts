@@ -5,3 +5,12 @@ export interface ChatResponse {
   totalRows: number | null;
   error: string | null;
 }
+
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface BrainstormResponse {
+  reply: string;
+}

@@ -1,16 +1,34 @@
 import { useState } from "react";
 import { QuestionInput } from "./components/QuestionInput";
 import { ResultsTable } from "./components/ResultsTable";
+import { BrainstormChat } from "./components/BrainstormChat";
 import { useChat } from "./hooks/useChat";
+import type { ChatResponse } from "./types/chat";
 import "./App.css";
 
-function App() {
-  const { response, loading, error, ask } = useChat();
-  const [currentQuestion, setCurrentQuestion] = useState("");
+type Tab = "quick" | "brainstorm";
 
-  const handleAsk = (q: string) => {
-    setCurrentQuestion(q);
-    ask(q);
+function App() {
+  const { response, loading, error, ask, overrideResponse } = useChat();
+  const [question, setQuestion] = useState("");
+  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [activeTab, setActiveTab] = useState<Tab>("quick");
+
+  const handleAsk = () => {
+    if (!question.trim()) return;
+    setCurrentQuestion(question.trim());
+    ask(question.trim());
+  };
+
+  const handleUseQuery = (query: string) => {
+    setQuestion(query);
+    setActiveTab("quick");
+  };
+
+  const handleReportGenerated = (chatResponse: ChatResponse, query: string) => {
+    overrideResponse(chatResponse);
+    setCurrentQuestion(query);
+    setActiveTab("quick");
   };
 
   return (
@@ -23,26 +41,61 @@ function App() {
           </h1>
         </div>
 
-        {/* Input */}
-        <div className="card bg-base-100 shadow p-6">
-          <QuestionInput onSubmit={handleAsk} loading={loading} />
+        {/* Tabs */}
+        <div role="tablist" className="tabs tabs-bordered">
+          <button
+            role="tab"
+            className={`tab ${activeTab === "quick" ? "tab-active" : ""}`}
+            onClick={() => setActiveTab("quick")}
+          >
+            Quick Query
+          </button>
+          <button
+            role="tab"
+            className={`tab ${activeTab === "brainstorm" ? "tab-active" : ""}`}
+            onClick={() => setActiveTab("brainstorm")}
+          >
+            Brainstorm
+          </button>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="alert alert-error">
-            <span>{error}</span>
-          </div>
+        {/* Quick Query Tab */}
+        {activeTab === "quick" && (
+          <>
+            <div className="card bg-base-100 shadow p-6">
+              <QuestionInput
+                value={question}
+                onChange={setQuestion}
+                onSubmit={handleAsk}
+                loading={loading}
+              />
+            </div>
+
+            {error && (
+              <div className="alert alert-error">
+                <span>{error}</span>
+              </div>
+            )}
+
+            {response?.success && response.data && (
+              <div className="card bg-base-100 shadow p-6">
+                <ResultsTable
+                  data={response.data}
+                  sql={response.sql}
+                  totalRows={response.totalRows ?? 0}
+                  question={currentQuestion}
+                />
+              </div>
+            )}
+          </>
         )}
 
-        {/* Results */}
-        {response?.success && response.data && (
+        {/* Brainstorm Tab */}
+        {activeTab === "brainstorm" && (
           <div className="card bg-base-100 shadow p-6">
-            <ResultsTable
-              data={response.data}
-              sql={response.sql}
-              totalRows={response.totalRows ?? 0}
-              question={currentQuestion}
+            <BrainstormChat
+              onUseQuery={handleUseQuery}
+              onReportGenerated={handleReportGenerated}
             />
           </div>
         )}

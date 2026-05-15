@@ -1,19 +1,13 @@
-import { useState } from "react";
-
 interface Props {
-  onSubmit: (question: string) => void;
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
   loading: boolean;
 }
 
-export function QuestionInput({ onSubmit, loading }: Props) {
-  const [question, setQuestion] = useState("");
-
-  const handleSubmit = () => {
-    if (question.trim()) onSubmit(question.trim());
-  };
-
+export function QuestionInput({ value, onChange, onSubmit, loading }: Props) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSubmit();
+    if (e.key === "Enter") onSubmit();
   };
 
   return (
@@ -27,15 +21,15 @@ export function QuestionInput({ onSubmit, loading }: Props) {
           type="text"
           className="input input-bordered flex-1"
           placeholder="e.g. Show me all orders that include item GEN2BK0 for our CVS customer, between Jan 2026 and March 2026."
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={loading}
         />
         <button
           className="btn btn-primary"
-          onClick={handleSubmit}
-          disabled={loading || !question.trim()}
+          onClick={onSubmit}
+          disabled={loading || !value.trim()}
         >
           {loading ? (
             <span className="loading loading-spinner loading-sm" />

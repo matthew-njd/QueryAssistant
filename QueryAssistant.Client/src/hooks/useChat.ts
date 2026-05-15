@@ -25,5 +25,10 @@ export function useChat() {
     }
   };
 
-  return { response, loading, error, ask };
+  const overrideResponse = (r: ChatResponse) => {
+    setResponse(r);
+    setError(r.success ? null : (r.error ?? "An error occurred."));
+  };
+
+  return { response, loading, error, ask, overrideResponse };
 }
