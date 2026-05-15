@@ -11,11 +11,10 @@ function stripSuggested(text: string): string {
 }
 
 interface Props {
-  onUseQuery: (query: string) => void;
   onReportGenerated: (response: ChatResponse, query: string) => void;
 }
 
-export function BrainstormChat({ onUseQuery, onReportGenerated }: Props) {
+export function BrainstormChat({ onReportGenerated }: Props) {
   const {
     messages,
     isLoading,
@@ -77,7 +76,7 @@ export function BrainstormChat({ onUseQuery, onReportGenerated }: Props) {
             className={`chat ${msg.role === "user" ? "chat-end" : "chat-start"}`}
           >
             <div
-              className={`chat-bubble text-sm whitespace-pre-wrap ${
+              className={`chat-bubble text-sm whitespace-pre-wrap text-left ${
                 msg.role === "user" ? "chat-bubble-primary" : ""
               }`}
             >
@@ -114,12 +113,6 @@ export function BrainstormChat({ onUseQuery, onReportGenerated }: Props) {
           </p>
           <p className="text-sm italic mb-3">"{suggestedQuery}"</p>
           <div className="flex gap-2 flex-wrap">
-            <button
-              className="btn btn-sm btn-outline btn-primary"
-              onClick={() => onUseQuery(suggestedQuery)}
-            >
-              Use this query
-            </button>
             <button
               className="btn btn-sm btn-primary"
               onClick={handleGenerateReport}

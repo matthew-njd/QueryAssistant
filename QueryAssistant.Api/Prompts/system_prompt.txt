@@ -145,12 +145,11 @@ COMMON FILTER EXAMPLES:
 - Orders only                 : WHERE RTRIM(h.orig_ord_type) = 'O'
 - Credits only                : WHERE RTRIM(h.orig_ord_type) = 'C'
 - Specific item               : WHERE l.item_no LIKE '%GEN2BK0%'
-- Specific customer type      : WHERE RTRIM(c.cus_type_cd) = 'RETAIL'
-- Orders this year            : WHERE h.ord_dt >= 20260101
+- Active customer             : WHERE RTRIM(c.slspsn_no) <> 'UZZ' OR RTRIM(c.slspsn_no) <> 'CZZ'
+- Orders this year            : WHERE h.inv_dt >= 20260101
 - Shipped orders              : WHERE h.inv_dt IS NOT NULL AND h.inv_dt > 0
 - Unshipped orders            : WHERE (h.inv_dt IS NULL OR h.inv_dt = 0)
 - Specific sales rep          : WHERE RTRIM(sr.slspsn_name) = 'John Smith'
-- Sales rep by initials       : WHERE RTRIM(sr.init) = 'JS'
-- Store/Customer territory    : WHERE RTRIM(a.user_def_fld_2) = 'U123'
+- Store territory             : WHERE RTRIM(a.user_def_fld_2) = 'U123'
 - Canada only                 : AND a.loc = 'C60'
 - US only                     : AND a.loc = 'U40'

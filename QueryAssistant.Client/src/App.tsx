@@ -20,15 +20,9 @@ function App() {
     ask(question.trim());
   };
 
-  const handleUseQuery = (query: string) => {
-    setQuestion(query);
-    setActiveTab("quick");
-  };
-
   const handleReportGenerated = (chatResponse: ChatResponse, query: string) => {
     overrideResponse(chatResponse);
     setCurrentQuestion(query);
-    setActiveTab("quick");
   };
 
   return (
@@ -52,33 +46,14 @@ function App() {
             onChange={() => setActiveTab("quick")}
           />
           {activeTab === "quick" && (
-            <>
-              <div className="tab-content bg-base-100 border-base-300 p-6">
-                <QuestionInput
-                  value={question}
-                  onChange={setQuestion}
-                  onSubmit={handleAsk}
-                  loading={loading}
-                />
-              </div>
-
-              {error && (
-                <div className="alert alert-error">
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {response?.success && response.data && (
-                <div className="tab-content bg-base-100 border-base-300 p-6">
-                  <ResultsTable
-                    data={response.data}
-                    sql={response.sql}
-                    totalRows={response.totalRows ?? 0}
-                    question={currentQuestion}
-                  />
-                </div>
-              )}
-            </>
+            <div className="tab-content bg-base-100 border-base-300 p-6">
+              <QuestionInput
+                value={question}
+                onChange={setQuestion}
+                onSubmit={handleAsk}
+                loading={loading}
+              />
+            </div>
           )}
 
           <input
@@ -92,12 +67,28 @@ function App() {
           {activeTab === "brainstorm" && (
             <div className="tab-content bg-base-100 border-base-300 p-6">
               <BrainstormChat
-                onUseQuery={handleUseQuery}
                 onReportGenerated={handleReportGenerated}
               />
             </div>
           )}
         </div>
+
+        {error && (
+          <div className="alert alert-error">
+            <span>{error}</span>
+          </div>
+        )}
+
+        {response?.success && response.data && (
+          <div className="bg-base-100 border-base-300 rounded-box border p-6">
+            <ResultsTable
+              data={response.data}
+              sql={response.sql}
+              totalRows={response.totalRows ?? 0}
+              question={currentQuestion}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
