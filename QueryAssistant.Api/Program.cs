@@ -8,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient<ILLMService, GeminiService>();
 builder.Services.AddSingleton<PromptService>();
 builder.Services.AddScoped<QueryService>();
+builder.Services.AddScoped<QueryLogService>();
 builder.Services.AddSingleton<SqlSafetyService>();
 
 builder.Services.AddCors(options =>

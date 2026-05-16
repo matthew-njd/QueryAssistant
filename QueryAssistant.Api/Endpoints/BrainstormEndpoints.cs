@@ -27,6 +27,7 @@ namespace QueryAssistant.Api.Endpoints
                 ILLMService llmService,
                 PromptService promptService,
                 QueryService queryService,
+                QueryLogService queryLogService,
                 SqlSafetyService sqlSafetyService) =>
             {
                 if (request.Messages is null || request.Messages.Count == 0)
@@ -38,9 +39,11 @@ namespace QueryAssistant.Api.Endpoints
                     .LastOrDefault(l => l.Trim().StartsWith("SUGGESTED:"));
 
                 string metaPrompt;
+                string? suggestedQuery = null;
+
                 if (!string.IsNullOrEmpty(suggestedLine))
                 {
-                    var suggestedQuery = suggestedLine.Replace("SUGGESTED:", "").Trim();
+                    suggestedQuery = suggestedLine.Replace("SUGGESTED:", "").Trim();
                     metaPrompt = $"Generate a SQL query for the following report request: {suggestedQuery}";
                 }
                 else
@@ -57,7 +60,12 @@ namespace QueryAssistant.Api.Endpoints
                 }
 
                 var systemPrompt = promptService.GetSystemPrompt();
-                var sql = await llmService.GenerateSqlAsync(metaPrompt, systemPrompt);
+                var examples = await queryLogService.GetTopExamplesAsync(5);
+                var enrichedSystemPrompt = examples.Count > 0
+                    ? systemPrompt + BuildFewShotBlock(examples)
+                    : systemPrompt;
+
+                var sql = await llmService.GenerateSqlAsync(metaPrompt, enrichedSystemPrompt);
 
                 if (sql.Trim() == "CANNOT_GENERATE" || sql.Trim().Contains("Please reword"))
                     return Results.Ok(new ChatResponse(false, null, null, null, "Could not generate a query from the conversation. Try rephrasing what you need."));
@@ -70,8 +78,30 @@ namespace QueryAssistant.Api.Endpoints
                 if (!result.Success)
                     return Results.Ok(new ChatResponse(false, sql.Trim(), null, null, result.Error));
 
+                if (suggestedQuery is not null)
+                    await queryLogService.LogQueryAsync(suggestedQuery, sql.Trim());
+
                 return Results.Ok(new ChatResponse(true, sql.Trim(), result.Data, result.TotalRows, null));
             });
+        }
+
+        private static string BuildFewShotBlock(List<QueryExample> examples)
+        {
+            var lines = new System.Text.StringBuilder();
+            lines.AppendLine();
+            lines.AppendLine();
+            lines.AppendLine("EXAMPLE QUERIES (proven queries from this system — use as reference for accuracy):");
+
+            for (int i = 0; i < examples.Count; i++)
+            {
+                lines.AppendLine();
+                lines.AppendLine($"Example {i + 1}:");
+                lines.AppendLine($"Request: {examples[i].NLQuery}");
+                lines.AppendLine("SQL:");
+                lines.AppendLine(examples[i].GeneratedSql);
+            }
+
+            return lines.ToString();
         }
     }
 }

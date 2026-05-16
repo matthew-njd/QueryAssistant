@@ -13,4 +13,6 @@ namespace QueryAssistant.Api.Models
     public record BrainstormRequest(List<ChatMessage> Messages);
 
     public record BrainstormResponse(string Reply);
+
+    public record QueryExample(string NLQuery, string GeneratedSql, int UsageCount);
 }
