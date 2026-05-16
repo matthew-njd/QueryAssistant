@@ -32,16 +32,29 @@ namespace QueryAssistant.Api.Endpoints
                 if (request.Messages is null || request.Messages.Count == 0)
                     return Results.BadRequest(new ChatResponse(false, null, null, null, "Messages cannot be empty."));
 
-                var conversationText = string.Join("\n", request.Messages.Select(m =>
-                    $"{(m.Role == "user" ? "User" : "Assistant")}: {m.Content}"));
+                var suggestedLine = request.Messages
+                    .Where(m => m.Role == "assistant")
+                    .SelectMany(m => m.Content.Split('\n'))
+                    .LastOrDefault(l => l.Trim().StartsWith("SUGGESTED:"));
 
-                var metaPrompt = $"""
-                    The following is a conversation where a user described the report they need:
+                string metaPrompt;
+                if (!string.IsNullOrEmpty(suggestedLine))
+                {
+                    var suggestedQuery = suggestedLine.Replace("SUGGESTED:", "").Trim();
+                    metaPrompt = $"Generate a SQL query for the following report request: {suggestedQuery}";
+                }
+                else
+                {
+                    var conversationText = string.Join("\n", request.Messages.Select(m =>
+                        $"{(m.Role == "user" ? "User" : "Assistant")}: {m.Content}"));
+                    metaPrompt = $"""
+                        The following is a conversation where a user described the report they need:
 
-                    {conversationText}
+                        {conversationText}
 
-                    Based on this conversation, generate the SQL query that retrieves the data the user described.
-                    """;
+                        Based on this conversation, generate the SQL query that retrieves the data the user described.
+                        """;
+                }
 
                 var systemPrompt = promptService.GetSystemPrompt();
                 var sql = await llmService.GenerateSqlAsync(metaPrompt, systemPrompt);

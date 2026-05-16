@@ -33,7 +33,6 @@ app.UseCors("DevCors");
 app.UseHttpsRedirection();
 
 app.MapHealthEndpoints();
-app.MapChatEndpoints();
 app.MapBrainstormEndpoints();
 
 app.Run();

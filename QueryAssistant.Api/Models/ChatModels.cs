@@ -1,7 +1,5 @@
 namespace QueryAssistant.Api.Models
 {
-    public record ChatRequest(string Question);
-
     public record ChatResponse(
         bool Success,
         string? Sql,
