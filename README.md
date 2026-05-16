@@ -1,6 +1,18 @@
-# Query Assistant
+# PCF AI Query Assistant for Sales
 
-A natural language sales data query tool built with ASP.NET Core (.NET 10) and React (Vite + TypeScript). Users can ask plain English questions about sales and order data, which are translated into SQL queries using an AI language model and executed against a SQL Server database. Results are displayed in a data table with an option to export to Excel.
+An AI-powered sales reporting tool that lets non-technical users generate reports from a SQL Server sales database using plain English. Instead of writing queries, users have a guided conversation with the AI to describe what they need. The AI asks clarifying questions, proposes a natural language report description, then translates it into SQL and returns the results.
+
+---
+
+## How It Works
+
+The app uses a two-stage AI pipeline:
+
+1. **Brainstorm (conversation)** — The user describes what report they need in plain English. The AI asks up to two clarifying questions at a time to pin down the time period, what to measure, and any filters. When it has enough information it proposes a `SUGGESTED` natural language query.
+
+2. **Generate (SQL)** — When the user clicks Generate Report, the suggested query is sent to the LLM with the system prompt (schema + business rules) plus few-shot examples from previously successful queries. The generated SQL is safety-checked and executed against SQL Server. Results are displayed in a paginated table with an option to export to Excel.
+
+Over time, successful queries are logged to `PCF_QueryAssistantAI_QueryLog` and injected back as few-shot examples, improving SQL generation accuracy on common report patterns.
 
 ---
 
@@ -10,39 +22,41 @@ A natural language sales data query tool built with ASP.NET Core (.NET 10) and R
 /QueryAssistant
   QueryAssistant.sln
   README.md
-  /QueryAssistant.API          ← ASP.NET Core Web API (.NET 10)
+  /QueryAssistant.Api             ← ASP.NET Core Web API (.NET 10)
     /Endpoints
-      ChatEndpoints.cs         ← POST /api/chat — natural language to SQL + execution
-      ExportEndpoints.cs       ← POST /api/export — generate and download Excel file
-      HealthEndpoints.cs       ← GET /health — API health check
+      BrainstormEndpoints.cs      ← POST /api/brainstorm and /api/brainstorm/generate
+      HealthEndpoints.cs          ← GET /health
     /Interfaces
-      ILLMService.cs           ← LLM provider abstraction interface
+      ILLMService.cs              ← LLM provider abstraction
     /Models
-      ChatModels.cs            ← Request and response models
+      ChatModels.cs               ← Request/response records
     /Prompts
-      system_prompt.txt        ← AI system prompt containing schema and rules
+      system_prompt.txt           ← SQL generation rules, schema, and business logic
+      brainstorm_prompt.txt       ← Conversational AI behavior and available data guide
+    /Scripts
+      CreateQueryLog.sql          ← One-time DDL to create the query log table
     /Services
-      ClaudeService.cs         ← Claude (Anthropic) LLM implementation
-      GeminiService.cs         ← Gemini (Google) LLM implementation
-      PromptService.cs         ← Loads and serves the system prompt
-      QueryService.cs          ← Executes SQL queries via Dapper
-      SqlSafetyService.cs      ← Validates generated SQL is read-only
-    Program.cs                 ← App entry point, DI registration, middleware
-    appsettings.json           ← App configuration (no secrets)
-  /QueryAssistant.Client       ← React + Vite + TypeScript frontend
+      GeminiService.cs            ← Gemini (Google) LLM implementation
+      PromptService.cs            ← Loads prompt files at startup
+      QueryService.cs             ← Executes SQL via Dapper
+      QueryLogService.cs          ← Logs successful queries, retrieves few-shot examples
+      SqlSafetyService.cs         ← Validates generated SQL is SELECT-only
+    Program.cs                    ← Entry point, DI registration, middleware
+    appsettings.json              ← App configuration (no secrets)
+  /QueryAssistant.Client          ← React + Vite + TypeScript frontend
     /src
       /components
-        QuestionInput.tsx      ← Natural language input bar
-        ResultsTable.tsx       ← Dynamic results table with export button
+        BrainstormChat.tsx        ← Conversational chat UI
+        ResultsTable.tsx          ← Paginated results table with SQL preview and export
       /hooks
-        useChat.ts             ← API call logic for chat and export
+        useBrainstorm.ts          ← Brainstorm and report generation API logic
       /types
-        chat.ts                ← TypeScript types for API responses
-      App.tsx                  ← Root application component
-      main.tsx                 ← React entry point
-      index.css                ← Tailwind CSS imports
-    vite.config.ts             ← Vite config with API proxy
-    tailwind.config.js         ← Tailwind + DaisyUI configuration
+        chat.ts                   ← TypeScript types for API responses
+      /utils
+        exportToExcel.ts          ← Client-side Excel export utility
+      App.tsx                     ← Root component and result state management
+      main.tsx                    ← React entry point
+    vite.config.ts                ← Vite config with API proxy
 ```
 
 ---
@@ -51,167 +65,63 @@ A natural language sales data query tool built with ASP.NET Core (.NET 10) and R
 
 ### API
 
-| Package                  | Purpose                         |
-| ------------------------ | ------------------------------- |
-| ASP.NET Core (.NET 10)   | Web API framework               |
-| Dapper                   | Lightweight SQL query execution |
-| Microsoft.Data.SqlClient | SQL Server database driver      |
-| ClosedXML                | Excel file generation           |
-| Anthropic.SDK            | Claude AI provider (optional)   |
-| Scalar.AspNetCore        | API documentation UI            |
+| Package                  | Purpose                              |
+| ------------------------ | ------------------------------------ |
+| ASP.NET Core (.NET 10)   | Web API framework                    |
+| Dapper                   | Lightweight SQL query execution      |
+| Microsoft.Data.SqlClient | SQL Server database driver           |
+| Scalar.AspNetCore        | API documentation UI (dev only)      |
 
 ### Client
 
-| Package               | Purpose                     |
-| --------------------- | --------------------------- |
-| React 18 + TypeScript | Frontend framework          |
-| Vite                  | Build tool and dev server   |
-| Tailwind CSS          | Utility-first CSS framework |
-| DaisyUI               | Tailwind component library  |
-| Axios                 | HTTP client for API calls   |
-
----
-
-## Prerequisites
-
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Node.js 20+](https://nodejs.org)
-- SQL Server instance (local or hosted)
-- A Gemini API key from [Google AI Studio](https://aistudio.google.com) or a Claude API key from [Anthropic](https://console.anthropic.com)
-
----
-
-## Getting Started
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/matthew-njd/QueryAssistant.git
-cd QueryAssistant
-```
-
-### 2. Configure API secrets
-
-Navigate to the API project and initialise user secrets:
-
-```bash
-cd QueryAssistant.API
-dotnet user-secrets init
-```
-
-Set your API key and database connection string:
-
-```bash
-# If using Gemini
-dotnet user-secrets set "Gemini:ApiKey" "your-gemini-api-key"
-
-# If using Claude
-dotnet user-secrets set "Claude:ApiKey" "your-claude-api-key"
-
-# Database connection string
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=your-server;Database=your-db;User Id=your-user;Password=your-password;Encrypt=True;TrustServerCertificate=True"
-```
-
-### 3. Run the API
-
-```bash
-cd QueryAssistant.API
-dotnet run
-```
-
-The API will be available at `http://localhost:5000`.
-Scalar API docs will be available at `http://localhost:5000/scalar`.
-
-### 4. Run the React client
-
-Open a second terminal:
-
-```bash
-cd QueryAssistant.Client
-npm install
-npm run dev
-```
-
-The client will be available at `http://localhost:5173`.
-
----
-
-## Switching LLM Providers
-
-The project uses an `ILLMService` abstraction so switching between Gemini and Claude requires a one-line change in `Program.cs`:
-
-```csharp
-// Active LLM provider — swap comment to switch providers
-builder.Services.AddHttpClient<ILLMService, GeminiService>();
-// builder.Services.AddScoped<ILLMService, ClaudeService>();
-```
+| Package               | Purpose                      |
+| --------------------- | ---------------------------- |
+| React 18 + TypeScript | Frontend framework           |
+| Vite                  | Build tool and dev server    |
+| Tailwind CSS          | Utility-first CSS framework  |
+| DaisyUI               | Tailwind component library   |
+| Axios                 | HTTP client for API calls    |
 
 ---
 
 ## API Endpoints
 
-| Method | Endpoint      | Description                                                                  |
-| ------ | ------------- | ---------------------------------------------------------------------------- |
-| GET    | `/health`     | Health check — confirms API is running                                       |
-| POST   | `/api/chat`   | Accepts a natural language question, returns generated SQL and query results |
-| POST   | `/api/export` | Accepts a natural language question, returns a downloadable Excel file       |
-
-### POST /api/chat
-
-**Request:**
-
-```json
-{
-  "question": "Show me all orders that include item GEN2BK0"
-}
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "sql": "SELECT ...",
-  "data": [...],
-  "rowCount": 42,
-  "error": null
-}
-```
-
-### POST /api/export
-
-**Request:**
-
-```json
-{
-  "question": "Show me all orders that include item GEN2BK0"
-}
-```
-
-**Response:** A downloadable `.xlsx` file with a main sheet and additional sheets grouped by `cus_type_cd` if present in the results.
+| Method | Endpoint                    | Description                                                        |
+| ------ | --------------------------- | ------------------------------------------------------------------ |
+| GET    | `/health`                   | Health check                                                       |
+| POST   | `/api/brainstorm`           | Multi-turn conversation — returns AI reply and optional SUGGESTED line |
+| POST   | `/api/brainstorm/generate`  | Converts conversation/SUGGESTED query to SQL, executes, logs result |
 
 ---
 
-## Database Schema
+## Database
 
-The system prompt in `Prompts/system_prompt.txt` covers the following tables:
+The app connects to a SQL Server database containing sales and order data. The DB user is **read-only** on all sales tables. The `PCF_QueryAssistantAI_QueryLog` table is the only table the app writes to (INSERT and UPDATE), and requires explicit permission for the app user.
 
-| Table          | Alias | Description                  |
-| -------------- | ----- | ---------------------------- |
-| `ARCUSFIL_SQL` | c     | Customer master records      |
-| `ARALTADR_SQL` | a     | Customer alternate addresses |
-| `OEHDRHST_SQL` | h     | Sales order headers          |
-| `OELINHST_SQL` | l     | Sales order line items       |
-| `ARSLMFIL_SQL` | sr    | Sales representatives        |
+### Sales Tables
 
-To add new tables, update `system_prompt.txt` with the table name, alias, key columns and any relevant join or filter examples.
+| Table            | Alias | Description                       |
+| ---------------- | ----- | --------------------------------- |
+| `ARCUSFIL_SQL`   | c     | Customer master records           |
+| `ARALTADR_SQL`   | a     | Customer alternate addresses (Ship-Tos) |
+| `OEHDRHST_SQL`   | h     | Sales order headers               |
+| `OELINHST_SQL`   | l     | Sales order line items            |
+| `ARSLMFIL_SQL`   | sr    | Sales representatives             |
+
+### Query Log Table
+
+| Table                           | Purpose                                                   |
+| ------------------------------- | --------------------------------------------------------- |
+| `PCF_QueryAssistantAI_QueryLog` | Stores successful NL query + SQL pairs for few-shot injection |
+
+To add new sales tables to the system, update `Prompts/system_prompt.txt` with the table name, alias, key columns, and any relevant join or filter rules.
 
 ---
 
 ## Security
 
-- All secrets are stored using [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) locally and should be stored in environment variables or a secrets manager in production
-- The database connection should use a **read-only SQL user** — the API never writes to the database
+- Secrets (API key, connection string) are stored via [.NET User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) locally
+- The DB user has **read-only** access to all sales tables — the API never modifies sales data
 - All generated SQL is validated by `SqlSafetyService` before execution — only `SELECT` statements are permitted
 - The schema exposed to the AI is limited to sales and order tables only
 
@@ -219,15 +129,11 @@ To add new tables, update `system_prompt.txt` with the table name, alias, key co
 
 ## Roadmap
 
-- [ ] Milestone 7 — POC hardening and pre-demo polish
-- [ ] Conversation history (multi-turn questions)
-- [ ] Query result pagination for large datasets
+- [x] Brainstorm conversational UI
+- [x] Query logging + few-shot injection for improved SQL accuracy
+- [ ] Thumbs up/down feedback on results (to validate logged queries)
+- [ ] AI natural language summary of report results
+- [ ] Error correction loop (auto-retry with SQL error context on failure)
+- [ ] Saved and named reports
 - [ ] User authentication
-- [ ] Logging and query audit trail
 - [ ] Production deployment guide
-
----
-
-## License
-
-This project is for internal use only.
