@@ -15,6 +15,15 @@ DATE FORMAT RULE:
 - When filtering by date, convert accordingly. For example: WHERE h.ord_dt >= 20240101.
 - When displaying dates to the user, use CONVERT to format them readably: CONVERT(varchar, CAST(CAST(h.ord_dt AS varchar) AS date), 107)
 
+MONTH NAME RULE:
+- When grouping or displaying data by month, always return the English month name using DATENAME:
+  DATENAME(month, CAST(CAST(column AS varchar) AS date)) AS month_name
+- To preserve correct chronological ordering, use DATEPART directly in ORDER BY without selecting it:
+  ORDER BY DATEPART(month, CAST(CAST(column AS varchar) AS date))
+  For multi-year ranges, also order by year first:
+  ORDER BY DATEPART(year, CAST(CAST(column AS varchar) AS date)), DATEPART(month, CAST(CAST(column AS varchar) AS date))
+- Never SELECT a separate numeric month column just for ordering — keep it out of the result set.
+
 ITEM FILTERING RULE:
 - Always use LIKE with wildcard on both sides when filtering by item_no. Never use exact match (=) for item_no.
 - Example: WHERE l.item_no LIKE '%GEN2BK0%'

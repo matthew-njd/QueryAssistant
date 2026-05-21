@@ -13,8 +13,11 @@ const CURRENCY_KEYWORDS = [
   "frt",
 ];
 
+const MONTH_DATE_KEYWORDS = ["month", "year", "date", "day", "week", "quarter"];
+
 const isCurrencyColumn = (col: string): boolean => {
   const lower = col.toLowerCase();
+  if (MONTH_DATE_KEYWORDS.some((k) => lower.includes(k))) return false;
   return CURRENCY_KEYWORDS.some((k) => lower.includes(k));
 };
 
